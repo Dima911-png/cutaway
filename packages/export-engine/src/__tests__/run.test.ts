@@ -7,7 +7,23 @@ import { ExportCancelledError, runVideoExport } from "../run";
 
 const plan = (totalFrames: number, frameRate = 30): ExportPlan =>
   planExport(
-    { durationFrames: totalFrames } as unknown as ProjectDocument,
+    {
+      durationFrames: totalFrames,
+      entities: {
+        clips: {
+          c1: {
+            id: "c1",
+            trackId: "t1",
+            startFrame: 0,
+            durationFrames: totalFrames,
+            hidden: false,
+            content: { kind: "media", mediaId: "m1", mediaKind: "video" },
+          },
+        },
+        tracks: { t1: { id: "t1", kind: "video", hidden: false } },
+        captionTracks: {},
+      },
+    } as unknown as ProjectDocument,
     {
       format: "mp4",
       resolution: { width: 640, height: 480 },
@@ -66,7 +82,23 @@ describe("runVideoExport", () => {
 
   it("offsets timestamps to zero when exporting a sub-range", async () => {
     const p = planExport(
-      { durationFrames: 300 } as unknown as ProjectDocument,
+      {
+        durationFrames: 300,
+        entities: {
+          clips: {
+            c1: {
+              id: "c1",
+              trackId: "t1",
+              startFrame: 0,
+              durationFrames: 300,
+              hidden: false,
+              content: { kind: "media", mediaId: "m1", mediaKind: "video" },
+            },
+          },
+          tracks: { t1: { id: "t1", kind: "video", hidden: false } },
+          captionTracks: {},
+        },
+      } as unknown as ProjectDocument,
       {
         format: "mp4",
         resolution: { width: 640, height: 480 },

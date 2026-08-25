@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ExportSettings, ProjectDocument } from "@cutaway/types";
+import type { ExportSettings, ProjectDocument, ProjectEntities } from "@cutaway/types";
 import {
   ExportPlanError,
   describeExport,
@@ -20,8 +20,96 @@ const settings = (over: Partial<ExportSettings> = {}): ExportSettings => ({
   ...over,
 });
 
-const project = (durationFrames: number): ProjectDocument =>
-  ({ durationFrames }) as unknown as ProjectDocument;
+/**
+ * A project with one visible video clip spanning the whole timeline — the
+ * ordinary case. `planExport` inspects clips to reject empty renders, so a
+ * bare `{ durationFrames }` stub is no longer a valid document.
+ */
+const project = (durationFrames: number, over: Partial<ProjectEntities> = {}): ProjectDocument =>
+  ({
+    durationFrames,
+    entities: {
+      clips: {
+        c1: {
+          id: "c1",
+          trackId: "t1",
+          startFrame: 0,
+          durationFrames,
+          hidden: false,
+          content: { kind: "media", mediaId: "m1", mediaKind: "video" },
+        },
+      },
+      tracks: { t1: { id: "t1", kind: "video", hidden: false } },
+      captionTracks: {},
+      ...over,
+    },
+  }) as unknown as ProjectDocument;
+
+/** A project whose timeline is empty — nothing to render at any frame. */
+const emptyProject = (durationFrames: number): ProjectDocument =>
+  project(durationFrames, { clips: {} });
+
+describe("planExport — empty renders", () => {
+  it("refuses a range with no clips at all rather than rendering a blank file", () => {
+    expect(() => planExport(emptyProject(150), settings())).toThrow(ExportPlanError);
+    expect(() => planExport(emptyProject(150), settings())).toThrow(/no clips/i);
+  });
+
+  it("refuses a sub-range that falls entirely outside every clip", () => {
+    // One clip covering 0..50, exporting 100..150 — geometrically valid, empty.
+    const doc = project(50);
+    (doc as unknown as { durationFrames: number }).durationFrames = 200;
+    expect(() => planExport(doc, settings({ range: { start: 100, end: 150 } }))).toThrow(
+      /no clips/i,
+    );
+  });
+
+  it("refuses when the only clip is hidden", () => {
+    const doc = project(150);
+    const clips = doc.entities.clips as Record<string, { hidden: boolean }>;
+    clips.c1!.hidden = true;
+    expect(() => planExport(doc, settings())).toThrow(/no clips/i);
+  });
+
+  it("refuses when the only clip sits on a hidden track", () => {
+    const doc = project(150);
+    const tracks = doc.entities.tracks as Record<string, { hidden: boolean }>;
+    tracks.t1!.hidden = true;
+    expect(() => planExport(doc, settings())).toThrow(/no clips/i);
+  });
+
+  it("allows an audio-only range but warns that the picture will be black", () => {
+    const doc = project(150, {
+      clips: {
+        a1: {
+          id: "a1",
+          trackId: "t1",
+          startFrame: 0,
+          durationFrames: 150,
+          hidden: false,
+          content: { kind: "audio", mediaId: "m1" },
+        },
+      } as never,
+    });
+    const plan = planExport(doc, settings());
+    expect(plan.warnings).toHaveLength(1);
+    expect(plan.warnings[0]).toMatch(/black/i);
+  });
+
+  it("allows a caption-only range — captions draw something", () => {
+    const doc = project(150, {
+      clips: {},
+      captionTracks: {
+        ct1: { blocks: [{ startFrame: 10, endFrame: 40 }] },
+      } as never,
+    });
+    expect(() => planExport(doc, settings())).not.toThrow();
+  });
+
+  it("reports no warnings for an ordinary export with visible clips", () => {
+    expect(planExport(project(150), settings()).warnings).toEqual([]);
+  });
+});
 
 describe("planExport", () => {
   it("plans the full timeline when no range is set", () => {

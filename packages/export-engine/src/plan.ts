@@ -28,6 +28,53 @@ export interface ExportPlan {
   audioCodec: ExportSettings["audioCodec"];
   videoBitrate: number;
   audioBitrate: number;
+  /**
+   * Non-fatal things worth telling the user before they wait for a render —
+   * chiefly that the picture will be black. Empty for an ordinary export.
+   */
+  warnings: string[];
+}
+
+/** What actually falls inside an export range, used to catch empty renders. */
+interface RangeContent {
+  /** Clips that draw something (video, image, text). */
+  visual: number;
+  /** Audio clips — they make a render worthwhile even with no picture. */
+  audio: number;
+  /** Caption blocks overlapping the range. */
+  captions: number;
+}
+
+/**
+ * Counts what a range would actually render.
+ *
+ * Hidden clips and clips on hidden tracks are skipped, because the renderer
+ * skips them too — counting them would let a "there is content here" check pass
+ * for a range that draws nothing. Ranges are half-open on both sides, matching
+ * the timeline.
+ */
+function contentInRange(project: ProjectDocument, start: Frame, end: Frame): RangeContent {
+  const { clips, tracks, captionTracks } = project.entities;
+  const content: RangeContent = { visual: 0, audio: 0, captions: 0 };
+
+  for (const clip of Object.values(clips)) {
+    const clipEnd = clip.startFrame + clip.durationFrames;
+    if (clipEnd <= start || clip.startFrame >= end) continue;
+    if (clip.hidden || tracks[clip.trackId]?.hidden) continue;
+    if (clip.content.kind === "audio") content.audio += 1;
+    else content.visual += 1;
+  }
+
+  for (const track of Object.values(captionTracks)) {
+    for (const block of track.blocks) {
+      if (block.endFrame > start && block.startFrame < end) {
+        content.captions += 1;
+        break;
+      }
+    }
+  }
+
+  return content;
 }
 
 /** Thrown when settings cannot produce a valid export. Carries a user-facing reason. */
@@ -70,6 +117,23 @@ export function planExport(project: ProjectDocument, settings: ExportSettings): 
 
   const totalFrames = endFrame - startFrame;
 
+  // A range with nothing in it renders a file that is blank and silent. That is
+  // never what someone means by "export", and letting it through silently is
+  // indistinguishable from a broken encoder — so refuse it with the reason.
+  const content = contentInRange(project, startFrame, endFrame);
+  if (content.visual === 0 && content.audio === 0 && content.captions === 0) {
+    throw new ExportPlanError(
+      "Nothing to export in this range — it contains no clips. Check your in/out points, and that the tracks you want are not hidden.",
+    );
+  }
+
+  // Audio-only is legitimate (a podcast, a music bed) but the picture *will* be
+  // black, so say so up front rather than letting it look like a failed render.
+  const warnings: string[] = [];
+  if (content.visual === 0 && content.captions === 0) {
+    warnings.push("This range has audio but no visible clips, so the picture will be black.");
+  }
+
   return {
     startFrame,
     endFrame,
@@ -82,6 +146,7 @@ export function planExport(project: ProjectDocument, settings: ExportSettings): 
     audioCodec: settings.audioCodec,
     videoBitrate: settings.videoBitrate,
     audioBitrate: settings.audioBitrate,
+    warnings,
   };
 }
 

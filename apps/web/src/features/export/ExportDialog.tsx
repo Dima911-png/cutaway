@@ -29,6 +29,9 @@ export function ExportDialog({ onClose }: { onClose: () => void }) {
   const projectFps = useEditorStore((s) => s.project.settings.frameRate);
   const stored = useEditorStore((s) => s.project.exportSettings);
   const durationFrames = useEditorStore((s) => s.project.durationFrames);
+  // planExport inspects clips (to refuse a render that would be blank), so the
+  // summary has to be computed from the real document.
+  const project = useEditorStore((s) => s.project);
   const inPoint = useEditorStore((s) => s.inPoint);
   const outPoint = useEditorStore((s) => s.outPoint);
 
@@ -83,16 +86,18 @@ export function ExportDialog({ onClose }: { onClose: () => void }) {
   // Validate the chosen settings so the summary reflects real, encodable output
   // and a bad range (or empty timeline) disables the button rather than failing
   // mid-export.
-  const { summary, valid } = useMemo(() => {
+  const { summary, valid, warnings } = useMemo(() => {
     try {
-      return {
-        summary: describeExport(planExport({ durationFrames } as never, settings)),
-        valid: true,
-      };
+      const plan = planExport(project, settings);
+      return { summary: describeExport(plan), valid: true, warnings: plan.warnings };
     } catch (err) {
-      return { summary: err instanceof Error ? err.message : "Invalid settings", valid: false };
+      return {
+        summary: err instanceof Error ? err.message : "Invalid settings",
+        valid: false,
+        warnings: [] as string[],
+      };
     }
-  }, [durationFrames, settings]);
+  }, [project, settings]);
 
   const percent = Math.round((progress?.ratio ?? 0) * 100);
 
@@ -182,6 +187,11 @@ export function ExportDialog({ onClose }: { onClose: () => void }) {
             )}
 
             <p className="text-2xs text-text-tertiary tabular mt-1">{summary}</p>
+            {warnings.map((warning) => (
+              <p key={warning} className="text-2xs mt-1 text-amber-500">
+                {warning}
+              </p>
+            ))}
 
             {error && <p className="text-danger text-2xs">Export failed: {error}</p>}
             {done && <p className="text-2xs text-accent">Exported — check your downloads.</p>}
