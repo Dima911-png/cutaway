@@ -1,6 +1,9 @@
 "use client";
 
+import { SlidersHorizontal } from "lucide-react";
+
 import type { Clip } from "@cutaway/types";
+import { EmptyState } from "@cutaway/ui";
 import { useShallow } from "zustand/react/shallow";
 import { useEditorStore } from "@/state/editorStore";
 import { groupedProperties } from "./propertySchema";
@@ -27,7 +30,9 @@ export function PropertiesPanel() {
   const api = useClipProperties();
 
   if (selectedIds.length === 0) {
-    return <Empty message="Select a clip to edit its properties." />;
+    return (
+      <Empty message="Click a clip on the timeline to edit its position, scale, rotation, and opacity." />
+    );
   }
 
   if (selectedIds.length > 1) {
@@ -83,5 +88,7 @@ function ClipHeader({ clip, playheadFrame }: { clip: Clip; playheadFrame: number
 }
 
 function Empty({ message }: { message: string }) {
-  return <p className="text-text-tertiary p-3 text-xs">{message}</p>;
+  return (
+    <EmptyState icon={<SlidersHorizontal size={20} />} title="Nothing selected" hint={message} />
+  );
 }

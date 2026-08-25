@@ -42,7 +42,12 @@ export function ExportDialog({ onClose }: { onClose: () => void }) {
   // An in/out selection is available when either point is set; the untouched end
   // defaults to the timeline's start or end.
   const hasSelection = inPoint !== null || outPoint !== null;
-  const selection = { start: inPoint ?? 0, end: outPoint ?? durationFrames };
+  // Memoised so it can be a dependency by identity rather than by picking
+  // its fields apart, which silently skips updates when a field is added.
+  const selection = useMemo(
+    () => ({ start: inPoint ?? 0, end: outPoint ?? durationFrames }),
+    [inPoint, outPoint, durationFrames],
+  );
   // Default to the selection when one exists — someone who set in/out points
   // almost certainly wants to export that, not the whole timeline.
   const [useSelection, setUseSelection] = useState(hasSelection);
@@ -72,16 +77,7 @@ export function ExportDialog({ onClose }: { onClose: () => void }) {
       audioCodec: format === "webm" ? "opus" : "aac",
       range: useSelection && hasSelection ? selection : null,
     }),
-    [
-      format,
-      resolution,
-      frameRate,
-      quality,
-      useSelection,
-      hasSelection,
-      selection.start,
-      selection.end,
-    ],
+    [format, resolution, frameRate, quality, useSelection, hasSelection, selection],
   );
 
   // Validate the chosen settings so the summary reflects real, encodable output

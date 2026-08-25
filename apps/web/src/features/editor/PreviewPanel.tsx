@@ -1,7 +1,15 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { ChevronsLeft, ChevronsRight, Pause, Play, SkipBack, SkipForward } from "lucide-react";
+import {
+  ChevronsLeft,
+  ChevronsRight,
+  Film,
+  Pause,
+  Play,
+  SkipBack,
+  SkipForward,
+} from "lucide-react";
 import { IconButton } from "@cutaway/ui";
 import { formatTimecode } from "@cutaway/timeline-engine";
 import { useEditorStore } from "@/state/editorStore";
@@ -12,10 +20,10 @@ import { useElementSize } from "@/hooks/useElementSize";
 /**
  * Video preview surface and transport controls.
  *
- * The compositor (PixiJS) mounts into `previewRef` in Phase 2. What exists now
- * is the *frame*: correct aspect-ratio fitting, safe guides, and transport —
- * the parts that are pure layout and would otherwise be rebuilt around the
- * renderer later.
+ * This owns the *frame* around the compositor: aspect-ratio fitting with
+ * letterboxing, safe guides, and transport. `PreviewStage` mounts the PixiJS
+ * renderer into the fitted box and is told only its pixel size, which keeps
+ * layout concerns out of the renderer entirely.
  */
 export function PreviewPanel() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -27,6 +35,9 @@ export function PreviewPanel() {
   const duration = useEditorStore((state) => state.project.durationFrames);
   const fps = useEditorStore((state) => state.project.settings.frameRate);
   const isPlaying = useEditorStore((state) => state.isPlaying);
+  // A brand-new project renders a black rectangle, which reads as broken rather
+  // than empty. Knowing there are no clips lets us say so.
+  const isEmpty = useEditorStore((state) => Object.keys(state.project.entities.clips).length === 0);
 
   const togglePlaying = useEditorStore((state) => state.togglePlaying);
   const setPlayhead = useEditorStore((state) => state.setPlayhead);
@@ -64,6 +75,8 @@ export function PreviewPanel() {
             )}
 
             {showGuides && <SafeGuides />}
+
+            {isEmpty && <StartHint />}
 
             {stageSize.width > 0 && (
               <MaskOverlay
@@ -113,6 +126,32 @@ export function PreviewPanel() {
             <span className="text-2xs font-semibold">SAFE</span>
           </IconButton>
         </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * First-run guidance.
+ *
+ * Shown only while the timeline is empty, and never interactive — it sits over
+ * the stage purely so the first thing someone sees answers "what now?" instead
+ * of being an unexplained black rectangle. It disappears the moment a clip
+ * exists, so it costs a returning user nothing.
+ */
+function StartHint() {
+  return (
+    <div
+      aria-hidden
+      className="pointer-events-none absolute inset-0 grid place-items-center p-4 text-center"
+    >
+      <div className="flex flex-col items-center gap-1.5">
+        <Film size={22} className="text-text-tertiary/50" />
+        <p className="text-text-secondary text-xs font-medium">Import media to get started</p>
+        <p className="text-text-tertiary text-2xs max-w-[240px] leading-relaxed">
+          Drag a video, image, or audio file anywhere in the window — or press Import. Nothing is
+          uploaded.
+        </p>
       </div>
     </div>
   );

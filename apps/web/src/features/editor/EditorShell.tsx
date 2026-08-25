@@ -23,8 +23,8 @@ import { LoadIssuesBanner } from "@/features/project/LoadIssuesBanner";
  * split (sidebar / preview / inspector). Two primitives, arbitrary layouts,
  * and every divider is resizable and persistent for free.
  *
- * Full drag-to-rearrange docking is a Phase 6 concern. Getting there means
- * replacing the static `panes` arrays with a serialized layout tree — the
+ * Full drag-to-rearrange docking is deliberately not built yet. Getting there
+ * means replacing the static `panes` arrays with a serialized layout tree — the
  * component boundaries here do not have to change.
  */
 export function EditorShell() {

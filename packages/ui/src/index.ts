@@ -9,6 +9,8 @@
 export { cn } from "./lib/cn";
 export { Button, IconButton } from "./components/Button";
 export type { ButtonProps, ButtonSize, ButtonVariant, IconButtonProps } from "./components/Button";
+export { EmptyState } from "./components/EmptyState";
+export type { EmptyStateProps } from "./components/EmptyState";
 export { Panel } from "./components/Panel";
 export type { PanelProps } from "./components/Panel";
 export { SplitPane } from "./components/SplitPane";

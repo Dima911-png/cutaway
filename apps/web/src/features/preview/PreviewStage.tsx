@@ -37,7 +37,7 @@ export function PreviewStage({ width, height }: PreviewStageProps) {
    * size, so it never runs during server rendering.
    */
   const [webglSupport] = useState(probeWebGLSupport);
-  /** Bumped when an async texture finishes, to force a redraw. */
+  /** Bumped when the renderer asks to draw again (texture decoded, shader built). */
   const [textureEpoch, setTextureEpoch] = useState(0);
   /** Bumped when a lost WebGL context is restored, to rebuild the renderer. */
   const [contextEpoch, setContextEpoch] = useState(0);
@@ -92,7 +92,7 @@ export function PreviewStage({ width, height }: PreviewStageProps) {
       .init(canvas, width, height)
       .then(() => {
         if (disposed) return;
-        renderer.setTextureReadyCallback(() => setTextureEpoch((value) => value + 1));
+        renderer.setRedrawCallback(() => setTextureEpoch((value) => value + 1));
         rendererRef.current = renderer;
         setInitError(null);
         setIsReady(true);

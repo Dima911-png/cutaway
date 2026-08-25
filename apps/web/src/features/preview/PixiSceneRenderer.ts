@@ -72,7 +72,9 @@ export class PixiSceneRenderer {
   private lastResolution = { width: 0, height: 0 };
   /** Media ids requested but not yet decoded, so we ask only once. */
   private readonly requested = new Set<Id>();
-  private onTextureReady: (() => void) | null = null;
+  private onRedrawNeeded: (() => void) | null = null;
+  /** Guards against queueing more than one follow-up draw per frame. */
+  private redrawQueued = false;
   private isPlaying = false;
   /** Always-on-top container for the caption overlay. */
   private captionContainer: Container | null = null;
@@ -113,8 +115,32 @@ export class PixiSceneRenderer {
     this.initialized = true;
   }
 
-  setTextureReadyCallback(callback: () => void): void {
-    this.onTextureReady = callback;
+  /**
+   * Registers a "draw this scene again" request.
+   *
+   * Some work cannot finish inside the render call that needs it — a video
+   * texture is still decoding, or a newly-built filter has not compiled its
+   * shader program yet. Both would otherwise leave a stale or blank frame on
+   * screen until an unrelated interaction happened to trigger another draw.
+   * The owner re-renders when this fires.
+   */
+  setRedrawCallback(callback: () => void): void {
+    this.onRedrawNeeded = callback;
+  }
+
+  /**
+   * Asks for one more draw on the next frame.
+   *
+   * Deferred rather than immediate because the caller is *inside* a render;
+   * re-entering synchronously would draw with the same not-yet-ready state.
+   */
+  private requestRedraw(): void {
+    if (this.redrawQueued) return;
+    this.redrawQueued = true;
+    requestAnimationFrame(() => {
+      this.redrawQueued = false;
+      this.onRedrawNeeded?.();
+    });
   }
 
   resize(width: number, height: number): void {
@@ -294,6 +320,11 @@ export class PixiSceneRenderer {
         .filter((f): f is Filter => f !== null);
       this.effectFilters.set(node.clipId, filters);
       this.effectKeys.set(node.clipId, key);
+
+      // A filter compiles its shader program on first use, which does not
+      // finish within this draw — the frame it is added would otherwise render
+      // black until some later interaction redrew the scene. Ask for that draw.
+      if (filters.length > 0) this.requestRedraw();
     }
 
     // Parameters are updated every frame so animated effect values track the
@@ -470,7 +501,7 @@ export class PixiSceneRenderer {
     void this.cache.load(mediaId, asset.source.key, kind).then((texture) => {
       // Decoding is async, so the frame that requested this texture has already
       // been drawn without it. Ask for a redraw now that it exists.
-      if (texture) this.onTextureReady?.();
+      if (texture) this.onRedrawNeeded?.();
     });
   }
 
@@ -690,6 +721,10 @@ export class PixiSceneRenderer {
   destroy(): void {
     if (!this.initialized) return;
     this.initialized = false;
+
+    // Drop the redraw callback so a follow-up draw queued for the next frame
+    // cannot fire into a torn-down renderer after this returns.
+    this.onRedrawNeeded = null;
 
     // `removeView` MUST stay false. The canvas element belongs to React, and
     // letting Pixi remove it from the DOM means React's next mount renders into

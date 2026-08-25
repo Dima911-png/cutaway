@@ -1,13 +1,14 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { Download, FolderOpen, Import, Redo2, Save, Search, Settings, Undo2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Download, FolderOpen, Import, Keyboard, Redo2, Save, Undo2 } from "lucide-react";
 import { Button, IconButton } from "@cutaway/ui";
 import { ASPECT_RATIOS, resolutionForAspect } from "@cutaway/utils";
 import { useEditorStore } from "@/state/editorStore";
 import { useMediaImportContext } from "@/features/media/MediaImportProvider";
 import { useProject } from "@/features/project/ProjectProvider";
 import { ExportDialog } from "@/features/export/ExportDialog";
+import { ShortcutsDialog } from "./ShortcutsDialog";
 
 export function TopToolbar() {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -93,12 +94,7 @@ export function TopToolbar() {
         </div>
       </div>
 
-      <IconButton size="sm" label="Search (Cmd+K)">
-        <Search size={14} />
-      </IconButton>
-      <IconButton size="sm" label="Project settings">
-        <Settings size={14} />
-      </IconButton>
+      <HelpButton />
 
       <IconButton
         size="sm"
@@ -124,6 +120,49 @@ export function TopToolbar() {
 
       <ExportButton />
     </header>
+  );
+}
+
+/**
+ * Help control — the shortcut reference, by button or by `?`.
+ *
+ * The `?` binding lives here rather than in the global shortcut hook because it
+ * only toggles this component's own state; routing it through the store would
+ * put a transient dialog flag into the document model.
+ */
+function HelpButton() {
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      // Yields to text entry like every other shortcut — "?" is a character
+      // someone may legitimately be typing into the project name.
+      if (
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target?.isContentEditable === true
+      ) {
+        return;
+      }
+      // `?` is Shift+/ on a US layout but sits elsewhere on others, so accept
+      // the produced character or the physical key plus Shift.
+      if (event.key === "?" || (event.code === "Slash" && event.shiftKey)) {
+        event.preventDefault();
+        setOpen((value) => !value);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  return (
+    <>
+      <IconButton size="sm" label="Keyboard shortcuts (?)" onClick={() => setOpen(true)}>
+        <Keyboard size={14} />
+      </IconButton>
+      {open && <ShortcutsDialog onClose={() => setOpen(false)} />}
+    </>
   );
 }
 

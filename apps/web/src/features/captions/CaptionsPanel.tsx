@@ -24,8 +24,8 @@ import type { EditorUpdateCaptionTrack } from "./types";
  *
  * Generation walks the spec pipeline — media → transcribe → word timings →
  * blocks → an editable track — with the transcription provider swappable behind
- * its interface. The default provider is a placeholder (no speech recognition
- * yet), which the confidence "review" affordance in the editor makes honest.
+ * its interface. The default is on-device Whisper; the stub remains as a
+ * fallback for environments that cannot run it.
  */
 export function CaptionsPanel() {
   const project = useEditorStore((state) => state.project);

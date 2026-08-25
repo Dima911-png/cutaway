@@ -9,7 +9,6 @@ export function StatusBar() {
   const duration = useEditorStore((state) => state.project.durationFrames);
   const fps = useEditorStore((state) => state.project.settings.frameRate);
   const clipCount = useEditorStore((state) => Object.keys(state.project.entities.clips).length);
-  const zoom = useEditorStore((state) => state.pixelsPerFrame);
 
   return (
     <footer className="border-border-subtle bg-surface-panel text-2xs text-text-tertiary flex h-(--size-statusbar-height) shrink-0 items-center gap-3 border-t px-3">
@@ -22,14 +21,12 @@ export function StatusBar() {
 
       <div className="bg-border-subtle h-3 w-px" />
 
-      <span className="tabular">{clipCount} clips</span>
+      <span className="tabular">
+        {clipCount} {clipCount === 1 ? "clip" : "clips"}
+      </span>
       <span className="tabular">{formatDuration(duration, fps)}</span>
 
       <div className="flex-1" />
-
-      <span className="tabular">{zoom.toFixed(1)} px/frame</span>
-
-      <div className="bg-border-subtle h-3 w-px" />
 
       <SaveIndicator />
     </footer>

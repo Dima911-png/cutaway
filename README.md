@@ -104,10 +104,9 @@ Vitest
 - [x] **Phase 4** — Captions (typed + styled + on-timeline), provider interface
 - [x] **Phase 5** — Color grading, aspect ratios, effects, transitions
 - [x] **Phase 6** — Export engine (WebCodecs + muxers, video + audio + range)
-
 - [x] **Phase 7** — On-device Whisper transcription (transformers.js, WebGPU/WASM)
-
 - [x] **Phase 8** — Frame-exact export (WebCodecs decoding, not `<video>` seeking)
+- [x] **Phase 9** — Usability pass: shortcut reference, guided empty states, no dead controls
 
 Next up:
 
@@ -141,6 +140,7 @@ Contributing guide: [`CONTRIBUTING.md`](CONTRIBUTING.md).
 | `Cmd/Ctrl` + `S` | Save now                         |
 | `+` / `-`        | Zoom timeline                    |
 | `Home` / `End`   | Jump to start / end              |
+| `?`              | Show the shortcut reference      |
 
 ## License
 

@@ -1,10 +1,10 @@
 "use client";
 
 import { Circle, Eye, EyeOff, RectangleHorizontal, Trash2 } from "lucide-react";
-import type { Clip, Mask, Vec2 } from "@cutaway/types";
+import type { Mask, Vec2 } from "@cutaway/types";
 import { evaluate } from "@cutaway/animation-engine";
 import { createEllipseMask, createRectangleMask } from "@cutaway/mask-engine";
-import { IconButton, cn } from "@cutaway/ui";
+import { EmptyState, IconButton, cn } from "@cutaway/ui";
 import { useShallow } from "zustand/react/shallow";
 import { useEditorStore } from "@/state/editorStore";
 
@@ -29,7 +29,13 @@ export function MasksPanel() {
   const updateClip = useEditorStore((state) => state.updateClip);
 
   if (!clip) {
-    return <p className="text-text-tertiary p-3 text-xs">Select a clip to add a mask.</p>;
+    return (
+      <EmptyState
+        icon={<Circle size={20} />}
+        title="Nothing selected"
+        hint="Select a clip to mask it, so the layer underneath shows through."
+      />
+    );
   }
   if (clip.content.kind === "audio") {
     return <p className="text-text-tertiary p-3 text-xs">Audio clips cannot be masked.</p>;
@@ -76,7 +82,9 @@ export function MasksPanel() {
       </div>
 
       {clip.masks.length === 0 ? (
-        <p className="text-text-tertiary text-2xs">No masks. Add one above to clip this layer.</p>
+        <p className="text-text-tertiary text-2xs">
+          No masks yet — add one above to clip this layer.
+        </p>
       ) : (
         <ul className="flex flex-col gap-1">
           {clip.masks.map((mask) => (

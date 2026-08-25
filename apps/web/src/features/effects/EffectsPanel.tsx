@@ -1,12 +1,12 @@
 "use client";
 
-import { ChevronDown, ChevronUp, Eye, EyeOff, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Eye, EyeOff, Sparkles, Trash2 } from "lucide-react";
 import type { Clip, EffectDefinition, EffectInstance, EffectParamValue } from "@cutaway/types";
 import { staticValue } from "@cutaway/types";
 import { evaluate } from "@cutaway/animation-engine";
 import { defaultEffectParams, effectRegistry } from "@cutaway/effects-engine";
 import { createId } from "@cutaway/utils";
-import { IconButton, cn } from "@cutaway/ui";
+import { EmptyState, IconButton, cn } from "@cutaway/ui";
 import { useEditorStore } from "@/state/editorStore";
 import { NumberField } from "@/features/properties/NumberField";
 
@@ -28,9 +28,23 @@ export function EffectsPanel() {
   const updateClip = useEditorStore((state) => state.updateClip);
   const endGesture = useEditorStore((state) => state.endGesture);
 
-  if (!clip) return <p className="text-text-tertiary p-3 text-xs">Select a clip to add effects.</p>;
+  if (!clip) {
+    return (
+      <EmptyState
+        icon={<Sparkles size={20} />}
+        title="Nothing selected"
+        hint="Select a clip to add blurs, colour effects, or a chroma key."
+      />
+    );
+  }
   if (clip.content.kind === "audio") {
-    return <p className="text-text-tertiary p-3 text-xs">Audio clips cannot take effects.</p>;
+    return (
+      <EmptyState
+        icon={<Sparkles size={20} />}
+        title="Not available for audio"
+        hint="Effects apply to video, image, and text clips."
+      />
+    );
   }
 
   const patchEffects = (
@@ -112,7 +126,7 @@ export function EffectsPanel() {
       </section>
 
       {clip.effects.length === 0 ? (
-        <p className="text-text-tertiary text-2xs">No effects. Add one above.</p>
+        <p className="text-text-tertiary text-2xs">No effects yet — add one above.</p>
       ) : (
         <ul className="flex flex-col gap-2">
           {clip.effects.map((effect, index) => {

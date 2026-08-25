@@ -1,11 +1,13 @@
 "use client";
 
+import { Palette } from "lucide-react";
+
 import type { Clip, ColorGrade } from "@cutaway/types";
 import { staticValue } from "@cutaway/types";
 import { evaluate } from "@cutaway/animation-engine";
 import { COLOR_GRADE_PRESETS, type ColorGradePreset } from "@cutaway/color-engine";
 import { createColorGrade } from "@cutaway/utils";
-import { cn } from "@cutaway/ui";
+import { EmptyState, cn } from "@cutaway/ui";
 import { useEditorStore } from "@/state/editorStore";
 import { NumberField } from "@/features/properties/NumberField";
 
@@ -57,7 +59,15 @@ export function ColorPanel() {
   const updateClip = useEditorStore((state) => state.updateClip);
   const endGesture = useEditorStore((state) => state.endGesture);
 
-  if (!clip) return <p className="text-text-tertiary p-3 text-xs">Select a clip to grade it.</p>;
+  if (!clip) {
+    return (
+      <EmptyState
+        icon={<Palette size={20} />}
+        title="Nothing selected"
+        hint="Select a clip to adjust its exposure, contrast, and colour."
+      />
+    );
+  }
   if (clip.content.kind === "audio") {
     return <p className="text-text-tertiary p-3 text-xs">Audio clips cannot be graded.</p>;
   }

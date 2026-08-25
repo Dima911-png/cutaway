@@ -1,15 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Captions,
-  FolderOpen,
-  LayoutTemplate,
-  Plug,
-  Shapes,
-  Sparkles,
-  type LucideIcon,
-} from "lucide-react";
+import { Captions, FolderOpen, type LucideIcon } from "lucide-react";
 import { Panel, cn } from "@cutaway/ui";
 import { MediaPanel } from "@/features/media/MediaPanel";
 import { CaptionsPanel } from "@/features/captions/CaptionsPanel";
@@ -20,6 +12,11 @@ import { CaptionsPanel } from "@/features/captions/CaptionsPanel";
  * A vertical icon rail rather than tabs across the top: the rail scales to a
  * dozen sections without wrapping, and it is where every tool in this category
  * (Figma, Premiere, Resolve) has trained users to look.
+ *
+ * Only sections that actually do something are listed. A rail advertising
+ * "coming soon" panels trains people that clicking things does nothing, and it
+ * misleads worse than it teases — an "Effects" entry here would send someone
+ * looking for effects away from the inspector, where they really live.
  */
 
 interface SidebarSection {
@@ -30,11 +27,7 @@ interface SidebarSection {
 
 const SECTIONS: SidebarSection[] = [
   { id: "media", label: "Media", icon: FolderOpen },
-  { id: "effects", label: "Effects", icon: Sparkles },
-  { id: "templates", label: "Templates", icon: LayoutTemplate },
   { id: "captions", label: "Captions", icon: Captions },
-  { id: "assets", label: "Assets", icon: Shapes },
-  { id: "plugins", label: "Plugins", icon: Plug },
 ];
 
 export function LeftSidebar() {
@@ -74,24 +67,9 @@ export function LeftSidebar() {
 
       <div className="min-w-0 flex-1">
         <Panel title={active.label} className="scrollbar-slim">
-          {active.id === "media" ? (
-            <MediaPanel />
-          ) : active.id === "captions" ? (
-            <CaptionsPanel />
-          ) : (
-            <EmptySection label={active.label} />
-          )}
+          {active.id === "media" ? <MediaPanel /> : <CaptionsPanel />}
         </Panel>
       </div>
-    </div>
-  );
-}
-
-function EmptySection({ label }: { label: string }) {
-  return (
-    <div className="flex h-full flex-col items-center justify-center gap-1 p-6 text-center">
-      <p className="text-text-secondary text-sm">{label}</p>
-      <p className="text-text-tertiary text-xs">Coming in a later milestone.</p>
     </div>
   );
 }
