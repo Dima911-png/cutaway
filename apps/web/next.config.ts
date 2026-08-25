@@ -2,6 +2,15 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /**
+   * The editor is entirely client-side — no route handlers, no server actions,
+   * no middleware, and no server image optimisation. Exporting it as static
+   * files is therefore not a compromise: it is what the app already is, and it
+   * keeps the local-first promise honest by making the build deployable to any
+   * static host (or opened from a file share) rather than to one vendor.
+   */
+  output: "export",
+
+  /**
    * Workspace packages ship raw TypeScript rather than a build step — one less
    * thing to run, and edits to a package are reflected instantly in dev.
    * Next must therefore compile them itself.

@@ -13,3 +13,7 @@ __pycache__/
 .venv/
 test-results/
 playwright-report/
+
+# Vercel
+.vercel
+.env*

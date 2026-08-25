@@ -12,6 +12,11 @@ Effects, the UX of Figma, and the openness of Blender.
 > and **frame-exact export to MP4/WebM with audio**. What's next is the plugin
 > SDK. See [Roadmap](#roadmap).
 
+## Try it
+
+**<https://cutaway-one.vercel.app>** — no signup, no install. Your footage never
+leaves your machine; the page is static and there is no backend to send it to.
+
 ## Quick start
 
 ```bash
